@@ -1,22 +1,35 @@
-#' @export
 admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_rel = 10^-2) {
   p <- nrow(S)
   Theta <- matrix(0, nrow = p, ncol = p)
   Z <- Z_old <- matrix(0, nrow = p, ncol = p)
   U <- matrix(0, nrow = p, ncol = p)
 
+  tolerance <- data.frame()
   for (i in seq_len(max_iter)) {
     Theta <- update_Theta(S, Z, U, rho)
     Z <- update_Z(Theta, U, Theta_back, lambda, rho)
     U <- update_U(Theta, Z, U)
-    if (is_conversed(Theta, Z, U, Z_old, rho, p, e_abs, e_rel)) {
+
+    n <- p
+    e_primal <- n * e_abs + e_rel * max(Frobenius_norm(Theta) , Frobenius_norm(Z))
+    e_dual <- n * e_abs + e_rel * Frobenius_norm(rho * U)
+    eval_primal <- Frobenius_norm(Theta - Z)
+    eval_dual <- Frobenius_norm(Z - Z_old)
+
+    df <- data.frame(iter = i, tolerance = c("tolerance", "tolerance", "residual", "residual"),
+                     type = c("primal", "dual", "primal", "dual"),
+                     value = c(e_primal, e_dual, eval_primal, eval_dual))
+    tolerance <- rbind(tolerance, df)
+    if (eval_primal <= e_primal && eval_dual <= e_dual) {
       break
     }
     Z_old <- Z
   }
   if (i == max_iter) warning("rearch max iteration")
 
-  Theta
+  result <- list(Theta = Theta, tolerance = tolerance)
+  class(result) <- "admm"
+  result
 }
 
 update_Theta <- function(S, Z, U, rho) {
@@ -46,12 +59,6 @@ generate_soft_thresh_func <- function(lambda) {
 update_U <- function(Theta, Z, U) {
   U <- Theta - Z + U
   U
-}
-
-is_conversed <- function(Theta, Z, U, Z_old, rho, n, e_abs, e_rel) {
-  e_primal <- n * e_abs + e_rel * max(Frobenius_norm(Theta) , Frobenius_norm(Z))
-  e_dual <- n * e_abs + e_rel * Frobenius_norm(rho * U)
-  Frobenius_norm(Theta - Z) <= e_primal && Frobenius_norm(Z - Z_old) <= e_dual
 }
 
 Frobenius_norm <- function(X_matrix) {

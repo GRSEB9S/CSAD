@@ -25,7 +25,7 @@ X_fore <- as.data.frame(rmvnorm(N_fore, Mu, Sigma))
 
 ```r
 library(CSAD)
-csad <- csad(X_back, X_fore)
+csad <- csad(X_back, X_fore, .3, .1)
 image(1:p, 1:p, csad$back)
 ```
 
@@ -44,6 +44,13 @@ image(1:p, 1:p, bsad$fore)
 ```
 
 ![](README_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+
+```r
+plot(csad$admm)
+```
+
+![](README_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 ## References
 
