@@ -8,8 +8,8 @@ set.seed(314)
 
 library(mvtnorm)
 p <- 20
-N_back <- 400
-N_fore <- 40
+N_back <- 300
+N_fore <- 30
 
 Mu <- rep(0, p)
 Sigma <- matrix(0, nrow = p, ncol = p)

@@ -1,10 +1,11 @@
-admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_rel = 10^-2) {
+admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_rel = 10^-2, verbose = TRUE) {
   p <- nrow(S)
   Theta <- matrix(0, nrow = p, ncol = p)
   Z <- Z_old <- matrix(0, nrow = p, ncol = p)
   U <- matrix(0, nrow = p, ncol = p)
 
   tolerance <- data.frame()
+  is_converged <- FALSE
   for (i in seq_len(max_iter)) {
     Theta <- update_Theta(S, Z, U, rho)
     Z <- update_Z(Theta, U, Theta_back, lambda, rho)
@@ -21,13 +22,14 @@ admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_r
                      value = c(e_primal, e_dual, eval_primal, eval_dual))
     tolerance <- rbind(tolerance, df)
     if (eval_primal <= e_primal && eval_dual <= e_dual) {
+      is_converged <- TRUE
       break
     }
     Z_old <- Z
   }
-  if (i == max_iter) warning("rearch max iteration")
+  if (i == max_iter && verbose) warning("rearch max iteration")
 
-  result <- list(Theta = Theta, tolerance = tolerance)
+  result <- list(Theta = Theta, tolerance = tolerance, is_converged = is_converged)
   class(result) <- "admm"
   result
 }
