@@ -34,7 +34,7 @@ X_fore <- as.data.frame(rmvnorm(N_fore, Mu, Sigma))
 
 ```{r}
 library(CSAD)
-csad <- csad(X_back, X_fore, .3, .1)
+csad <- csad(X_back, X_fore)
 image(1:p, 1:p, csad$back)
 image(1:p, 1:p, csad$fore)
 ```

@@ -1,26 +1,30 @@
+#' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
-csad <- function(df_back, df_fore, lambda, rho, max_iter = 1000) {
+csad <- function(df_back, df_fore, max_iter = 1000) {
   # compute background precision matrix
   glasso_back <- cv_glasso(df_back)
   Theta_back <- glasso_back$wi
-  # compute empirical covariance matrix for foreground data
-  S <- cov(df_fore)
-  # search optimum rho
+
+  # search optimum lambda & rho
   rho_candidates <- 10^seq(-2, 2, length.out = 10)
   lambda_candidates <- 10^seq(-2, 2, length.out = 10)
   df_loglik <- data.frame()
   for (rho in rho_candidates) {
-    message("rho ", rho)
+    last_loglik <- -Inf
     for (lambda in lambda_candidates) {
-      message(lambda)
       loglik <- compute_loglik(df_fore, Theta_back, lambda, rho)
       df_loglik <- rbind(df_loglik, data.frame(rho=rho, lambda=lambda, loglik=loglik))
+      message("rho: ", rho, "\tlambda: ", lambda, "\tloglik: ", loglik)
+      if (last_loglik > loglik) break
+      last_loglik <- loglik
     }
   }
   ind_opt <- which.max(df_loglik$loglik)
   rho_opt <- df_loglik$rho[ind_opt]
   lambda_opt <- df_loglik$lambda[ind_opt]
 
+  # compute empirical covariance matrix for foreground data
+  S <- cov(df_fore)
   admm <- admm(S, Theta_back, lambda_opt, rho_opt, max_iter)
 
   result <- list(back = Theta_back, fore = admm$Theta, glasso_back=glasso_back, admm = admm,
@@ -53,6 +57,5 @@ compute_loglik <- function(df, Theta_back, lambda, rho) {
       loglik
     })
   )
-
   loglik
 }

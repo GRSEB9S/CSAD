@@ -21,6 +21,7 @@ cv_glasso <- function(df, k=3, lambda=10^seq(-2, 2, length.out = 50)) {
 
   S <- cov(df)
   model <- glasso(S, rho=rho_opt)
+  model$cv <- data.frame(lambda = lambda, loglik = scores)
   model$lambda_opt <- rho_opt
   model
 }
