@@ -2,8 +2,9 @@
 #' @importFrom mvtnorm dmvnorm
 #' @export
 cv_glasso <- function(df, k=3, lambda=10^seq(-2, 2, length.out = 50)) {
+  if (!is.data.frame(df)) df <- as.data.frame(df)
   Mu <- rep(0, ncol(df))
-  splitted_df <- split(df, sample(seq_len(k), size = nrow(df), replace = TRUE))
+  splitted_df <- split(df, sample(k, size = nrow(df), replace = TRUE))
   scores <- sapply(lambda, function(rho) {
     sum(
       sapply(seq_len(k), function(i){

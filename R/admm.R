@@ -1,4 +1,4 @@
-admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_rel = 10^-2, verbose = TRUE) {
+admm <- function(S, Theta_back, lambda, rho, max_iter = 10000, e_abs = 10^-4, e_rel = 10^-2, verbose = TRUE) {
   p <- nrow(S)
   Theta <- matrix(0, nrow = p, ncol = p)
   Z <- Z_old <- matrix(0, nrow = p, ncol = p)
@@ -39,9 +39,8 @@ update_Theta <- function(S, Z, U, rho) {
   E <- eigen(rho * (Z - U) - S)
   Q <- E$vectors
   lambda <- E$values
-  Theta_tilde <- matrix(0, nrow = p, ncol = p)
-  diag(Theta_tilde) <- (lambda + sqrt(lambda^2 + 4 * rho)) / (2 * rho)
-  Theta <- Q %*% Theta_tilde %*% t(Q)
+  Theta_tilde <- diag((lambda + sqrt(lambda^2 + 4 * rho)) / (2 * rho))
+  Theta <- Q %*% Theta_tilde %*% solve(Q)
   Theta
 }
 
