@@ -2,7 +2,9 @@
 
 S3method(plot,admm)
 export(bsad)
+export(compute_loglik)
 export(csad)
+export(csad_pre)
 export(cv_glasso)
 export(generate_PSD_matrix)
 import(ggplot2)

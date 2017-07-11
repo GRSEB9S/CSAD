@@ -1,4 +1,4 @@
-admm <- function(S, Theta_back, lambda, rho, max_iter = 10000, e_abs = 10^-4, e_rel = 10^-2, verbose = TRUE) {
+admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_rel = 10^-2, quiet = FALSE) {
   p <- nrow(S)
   Theta <- matrix(0, nrow = p, ncol = p)
   Z <- Z_old <- matrix(0, nrow = p, ncol = p)
@@ -27,7 +27,7 @@ admm <- function(S, Theta_back, lambda, rho, max_iter = 10000, e_abs = 10^-4, e_
     }
     Z_old <- Z
   }
-  if (i == max_iter && verbose) warning("rearch max iteration")
+  if (!quiet && !is_converged) warning("rearch max iteration")
 
   result <- list(Theta = Theta, tolerance = tolerance, is_converged = is_converged)
   class(result) <- "admm"

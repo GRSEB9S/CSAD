@@ -1,13 +1,13 @@
 #' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
-csad <- function(df_back, df_fore, max_iter = 1000) {
+csad <- function(df_back, df_fore, lambda, rho, max_iter = 1000, quiet = FALSE) {
   # compute background precision matrix
-  message("Computing Background Precision Matrix ... ", appendLF = FALSE)
+  .message("Computing Background Precision Matrix ... ", appendLF = FALSE)
   glasso_back <- cv_glasso(df_back)
   Theta_back <- glasso_back$wi
-  message("End")
+  .message("End")
 
-  # search optimum lambda & rho
+  # search optimum rho
   message("Searching Optimum Hyper Parameters ... ")
   rho_candidates <- 10^seq(-2, 2, length.out = 10)
   lambda_candidates <- 10^seq(-2, 2, length.out = 10)
@@ -15,7 +15,7 @@ csad <- function(df_back, df_fore, max_iter = 1000) {
   for (rho in rho_candidates) {
     last_loglik <- -Inf
     for (lambda in lambda_candidates) {
-      loglik <- compute_loglik(df_fore, Theta_back, lambda, rho)
+      loglik <- compute_loglik2(df_fore, Theta_back, lambda, rho)
       df_loglik <- rbind(df_loglik, data.frame(rho=rho, lambda=lambda, loglik=loglik))
       message("rho: ", rho, "\tlambda: ", lambda, "\tloglik: ", loglik)
       if (last_loglik >= loglik) break
@@ -44,7 +44,7 @@ bsad <- function(df_back, df_fore) {
   list(back = Theta_back, fore = Theta_fore)
 }
 
-compute_loglik <- function(df, Theta_back, lambda, rho) {
+compute_loglik2 <- function(df, Theta_back, lambda, rho) {
   k <- 3
   if (!is.data.frame(df)) df <- as.data.frame(df)
   Mu <- rep(0, ncol(df))
@@ -65,9 +65,3 @@ compute_loglik <- function(df, Theta_back, lambda, rho) {
   loglik
 }
 
-to_symmetric <- function(mat) {
-  mat[lower.tri(mat)] <- 0
-  lower <- t(mat)
-  diag(lower) <- 0
-  mat + lower
-}

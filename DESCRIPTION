@@ -14,5 +14,6 @@ Imports:
     far,
     ggplot2,
     glasso,
-    mvtnorm
-RoxygenNote: 5.0.1
+    mvtnorm,
+    R6
+RoxygenNote: 6.0.1
