@@ -15,5 +15,5 @@ Imports:
     ggplot2,
     glasso,
     mvtnorm,
-    R6
+    rBayesianOptimization
 RoxygenNote: 6.0.1

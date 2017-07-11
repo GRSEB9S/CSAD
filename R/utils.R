@@ -18,3 +18,8 @@ to_symmetric <- function(mat) {
   diag(lower) <- 0
   mat + lower
 }
+
+put_list <- function (list, envir = parent.frame()) {
+  message(paste(sprintf("%s: %s", names(list), list),
+                collapse = ", "))
+}

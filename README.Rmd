@@ -7,6 +7,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
+  cache = TRUE,
   collapse = TRUE,
   comment = "#>",
   message = FALSE
@@ -15,33 +16,33 @@ knitr::opts_chunk$set(
 
 ```{r}
 set.seed(314)
-
-library(mvtnorm)
 p <- 20
-N_back <- 300
-N_fore <- 30
+N_back <- 500
+N_fore <- 50
 
-Mu <- rep(0, p)
-Sigma <- matrix(0, nrow = p, ncol = p)
-diag(Sigma) <- 1
-Sigma[5, 10] <- Sigma[10, 5] <- 0.7
-Sigma[5, 15] <- Sigma[15, 5] <- 0.4
-X_back <- as.data.frame(rmvnorm(N_back, Mu, Sigma))
+X_back <- matrix(rnorm(N_back * p), nrow = N_back, ncol = p)
+X_fore <- matrix(rnorm(N_fore * p), nrow = N_fore, ncol = p)
 
-Sigma[15, 20] <- Sigma[20, 15] <- 0.8
-X_fore <- as.data.frame(rmvnorm(N_fore, Mu, Sigma))
+X_back[, 5] <- X_back[, 1] + rnorm(N_back, 0, 0.75)
+X_fore[, 5] <- X_fore[, 1] + rnorm(N_fore, 0, 0.75)
+X_back[, 10] <- X_back[, 1] + rnorm(N_back, 0, 0.75)
+X_fore[, 10] <- X_fore[, 1] + rnorm(N_fore, 0, 0.75)
+X_back[, 15] <- X_back[, 5] + rnorm(N_back, 0, 0.75)
+X_fore[, 15] <- X_fore[, 5] + rnorm(N_fore, 0, 0.75)
+X_fore[, 19] <- X_fore[, 1] + rnorm(N_fore, 0, 0.75)
+X_fore[, 20] <- X_fore[, 5] + rnorm(N_fore, 0, 0.75)
 ```
 
 ```{r}
 library(CSAD)
-csad <- csad(X_back, X_fore)
+csad <- csad(X_back, X_fore, quiet = TRUE)
 image(1:p, 1:p, csad$back)
-image(1:p, 1:p, csad$fore)
+image(1:p, 1:p, abs(csad$fore) > 0.1)
 ```
 
 ```{r}
 bsad <- bsad(X_back, X_fore)
-image(1:p, 1:p, bsad$fore)
+image(1:p, 1:p, abs(bsad$fore) > 0.1)
 ```
 
 ```{r}
