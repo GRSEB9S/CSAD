@@ -25,25 +25,22 @@ X_fore[, 20] <- X_fore[, 5] + rnorm(N_fore, 0, 0.75)
 
 ```r
 library(CSAD)
-csad <- csad(X_back, X_fore, quiet = TRUE)
-#> 
-#>  Best Parameters Found: 
-#> Round = 7	lambda = 0.0516	rho = 0.0885	Value = -4028.4560
+csad <- csad(X_back, X_fore, rho = 10, quiet = TRUE)
 image(1:p, 1:p, csad$back)
 ```
 
 ![](README_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
 ```r
-image(1:p, 1:p, abs(csad$fore) > 0.1)
+image(1:p, 1:p, csad$fore)
 ```
 
 ![](README_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
 
 
 ```r
-bsad <- bsad(X_back, X_fore)
-image(1:p, 1:p, abs(bsad$fore) > 0.1)
+glasso_fore <- cv_glasso(X_fore, k = 10, quiet = TRUE)
+image(1:p, 1:p, glasso_fore$wi)
 ```
 
 ![](README_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
