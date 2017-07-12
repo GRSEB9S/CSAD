@@ -10,7 +10,7 @@ cv_glasso <- function(df, k=3, lambda=10^seq(-2, 2, length.out = 50), quiet = FA
   partition <- sample(k, n, TRUE)
   inds <- split(seq_len(n), partition)
 
-  if (!quiet) progress_bar <- txtProgressBar(0, length(lambda)+1, style = 3, title = "hoge")
+  if (!quiet) progress_bar <- txtProgressBar(0, length(lambda)+1, style = 3)
 
   scores <- integer(length(lambda))
   for (i in seq_along(lambda)) {

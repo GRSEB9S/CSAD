@@ -1,10 +1,9 @@
 #' @importFrom utils txtProgressBar setTxtProgressBar
 #' @importFrom rBayesianOptimization BayesianOptimization
 #' @export
-csad <- function(df_back, df_fore,
-                 lambda_range = c(0, 0.2), rho_range = c(0, 0.2),
-                 measure = c("loglik", "f_measure"), search_method = c("bayesopt", "grid"),
-                 bo_init_points = 4, bo_n_iter = 10,
+csad <- function(df_back, df_fore, rho = 1, lambda_range = 10^seq(-2, 0, length.out = 20),
+                 measure = c("loglik", "f1"), search_method = c("grid", "bo"),
+                 k_fold = 5, bo_init_points = 2, bo_n_iter = 8,
                  max_iter = 1000, quiet = FALSE) {
   # Prepare Arguments -------------------------------------------------------
   if (!is.data.frame(df_back)) df_back <- as.data.frame(df_back)
@@ -16,50 +15,39 @@ csad <- function(df_back, df_fore,
   .message("Computing Background Precision Matrix")
   glasso_back <- cv_glasso(df_back, quiet = quiet)
   Theta_back <- glasso_back$wi
+  S <- cov(df_fore)
 
-  # Search Optimum Params ----------------------------------------------------
-  .message("Searching Optimum Hyper Parameters")
-  if (measure == "loglik") {
-    obj_func <- get_obj_func_loglik(df_fore, Theta_back, k = 3)
+  # Augmented Lagrangian Method ---------------------------------------------
+  .message("Augmented Lagrangian Method")
+  obj_func <- switch(measure,
+                     loglik = get_obj_func_loglik(df_fore, Theta_back, rho, k_fold),
+                     f1 = get_obj_func_f_measure(df_back, df_fore, rho, k_fold))
+  if (search_method == "grid") {
+    scores <- numeric(length(lambda_range))
+    if (!quiet) progress_bar <- txtProgressBar(0, length(lambda_range), style = 3)
+    for (i in seq_along(lambda_range)) {
+      lambda <- lambda_range[i]
+      scores[i] <- obj_func(lambda)$Score
+      if (!quiet) setTxtProgressBar(progress_bar, i)
+    }
+    lambda <- lambda_range[which.max(scores)]
   } else {
-    obj_func <- get_obj_func_f_measure(df_back, df_fore, k = 3)
-  }
-  if (search_method == "bayesopt") {
     bo <- BayesianOptimization(
       obj_func,
-      bounds = list(lambda = lambda_range, rho = rho_range),
-      init_points = bo_init_points, n_iter = bo_n_iter,
-      verbose = !quiet
+      bounds = list(lambda = range(lambda_range)),
+      init_points = bo_init_points, n_iter = bo_n_iter
     )
-    lambda_opt <- bo$Best_Par["lambda"]
-    rho_opt <- bo$Best_Par["rho"]
-  } else {
-    lambda_opt <- NULL
-    rho_opt <- NULL
-    max_score <- -Inf
-    for (rho in rho_range) {
-      for (lambda in lambda_range) {
-        score <- obj_func(lambda, rho)$Score
-        if (score > max_score) {
-          lambda_opt <- lambda
-          rho_opt <- rho
-          last_score <- score
-        }
-      }
-    }
+    lambda <- bo$Best_Par["lambda"]
   }
-
-  # Compute Foreground Precision Matrix -------------------------------------
-  S <- cov(df_fore)
-  admm <- admm(S, Theta_back, lambda_opt, rho_opt, max_iter)
+  admm <- admm(S, Theta_back, lambda, rho, max_iter)
 
   result <- list(back = Theta_back, fore = admm$Theta, glasso_back=glasso_back,
-                 admm = admm, rho=rho_opt, lambda=lambda_opt)
+                 admm = admm, rho=rho, lambda=lambda)
   class(result) <- "csad"
   result
 }
 
-get_obj_func_loglik <- function(df_fore, Theta_back, k = 3) {
+get_obj_func_loglik <- function(df_fore, Theta_back, rho, k = 3) {
   n <- nrow(df_fore)
   Mu <- rep(0, ncol(df_fore))
 
@@ -68,7 +56,7 @@ get_obj_func_loglik <- function(df_fore, Theta_back, k = 3) {
 
   min_score <- 0
 
-  function(lambda, rho) {
+  function(lambda) {
     logliks <- integer(k)
     for (j in seq_len(k)) {
       df_train <- df_fore[-inds[[j]], ]
@@ -86,11 +74,11 @@ get_obj_func_loglik <- function(df_fore, Theta_back, k = 3) {
   }
 }
 
-get_obj_func_f_measure <- function(df_back, df_fore, k = 3) {
+get_obj_func_f_measure <- function(df_back, df_fore, rho, k = 3) {
   n_back <- nrow(df_back)
   n_fore <- nrow(df_fore)
 
-  function(lambda, rho) {
+  function(lambda) {
     partition <- sample(k, n_fore, TRUE)
     fore_inds <- split(seq_len(n_fore), partition)
     back_inds <- split(sample(n_back, n_fore), partition)

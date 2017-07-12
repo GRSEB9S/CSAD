@@ -6,16 +6,17 @@ admm <- function(S, Theta_back, lambda, rho, max_iter = 1000, e_abs = 10^-4, e_r
 
   tolerance <- data.frame()
   is_converged <- FALSE
+  score <- 0
   for (i in seq_len(max_iter)) {
     Theta <- update_Theta(S, Z, U, rho)
     Z <- update_Z(Theta, U, Theta_back, lambda, rho)
     U <- update_U(Theta, Z, U)
 
     n <- p
-    e_primal <- n * e_abs + e_rel * max(Frobenius_norm(Theta) , Frobenius_norm(Z))
-    e_dual <- n * e_abs + e_rel * Frobenius_norm(rho * U)
-    eval_primal <- Frobenius_norm(Theta - Z)
-    eval_dual <- Frobenius_norm(Z - Z_old)
+    e_primal <- n * e_abs + e_rel * max(norm(Theta, "F") , norm(Z, "F"))
+    e_dual <- n * e_abs + e_rel * norm(rho * U, "F")
+    eval_primal <- norm(Theta - Z, "F")
+    eval_dual <- norm(rho * (Z - Z_old), "F")
 
     df <- data.frame(iter = i, tolerance = c("tolerance", "tolerance", "residual", "residual"),
                      type = c("primal", "dual", "primal", "dual"),
@@ -60,8 +61,4 @@ generate_soft_thresh_func <- function(lambda) {
 update_U <- function(Theta, Z, U) {
   U <- Theta - Z + U
   U
-}
-
-Frobenius_norm <- function(X_matrix) {
-  sqrt(sum(X_matrix ^ 2))
 }
